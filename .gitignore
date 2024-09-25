@@ -1,0 +1,8 @@
+echo "*.log" >> .gitignore
+echo "*.tmp" >> .gitignore
+echo "__pycache__/" >> .gitignore
+src/drl_vo/src/weights
+src/drl_vo/src/runs
+build
+log
+install

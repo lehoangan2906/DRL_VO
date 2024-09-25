@@ -1,0 +1,49 @@
+<!--
+<package format="3">
+  <name>drl_vo_nav</name>
+  <version>0.0.1</version>
+  <description>DRL Velocity Obstacles Package</description>
+  <maintainer email="anhoangle296@gmail.com">AnLeHoang</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
+-->
+
+<package format="3">
+  <name>drl_vo_nav</name>
+  <version>0.0.1</version>
+  <description>DRL Velocity Obstacles Package</description>
+  <maintainer email="anhoangle296@gmail.com">AnLeHoang</maintainer>
+  <license>MIT</license>
+
+  <!-- Keep ament_cmake as the build tool dependency -->
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- Add rclcpp and rclpy to build dependencies -->
+  <build_depend>rclcpp</build_depend>
+  <build_depend>rclpy</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+
+  <!-- Export rclcpp and rclpy as part of the build export dependencies -->
+  <build_export_depend>rclcpp</build_export_depend>
+  <build_export_depend>rclpy</build_export_depend>
+
+  <!-- Add rclcpp to exec dependencies along with rclpy -->
+  <exec_depend>rclcpp</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
