@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import rclpy
 import numpy as np
 from pathlib import Path
@@ -26,7 +28,7 @@ class TrackDataPublisher(Node):
         twist = Twist()
 
         # Get the list of tracked persons, rs_dicts and pre_velocity_cal from track_func's run method
-        tracked_person_list, rs_dicts, pre_velocity_cal = run(
+        rs_dicts, pre_velocity_cal = run(
             camera_type = 'simulated',  
             source = '0',
             yolo_weights = WEIGHTS / 'yolov8m-seg.engine',  # Path to the YOLO model weights

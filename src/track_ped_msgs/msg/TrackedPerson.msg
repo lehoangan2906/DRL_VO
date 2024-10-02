@@ -18,3 +18,4 @@ geometry_msgs/Twist twist # Twist contains linear and angular velocity
 
 # Real life coordinate of the pedestrian relative to the camera
 geometry_msgs/Pose pose 
+

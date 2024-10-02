@@ -2,6 +2,7 @@ import os
 import sys
 import cv2
 import time
+import math
 import rclpy
 import torch 
 import pickle
@@ -68,6 +69,7 @@ color_image = None
 depth_camera_info = None
 color_camera_info = None
 points = None
+
 
 def depth_callback(msg):
     global depth_image
@@ -273,7 +275,8 @@ def process_detection(dt, im0s, paths, model, device, imgsz, save_dir, is_seg, c
             return p, im, None, None
         
 
-def process_tracking(p, dt, masks, proto, im0s, paths, curr_frames, prev_frames, tracker_list, outputs, faces_data, depth_frame, display_center, f_pixel, known_id, collection_name, samples, client, save_crop, line_thickness, names, im, DEPTH_WIDTH, DEPTH_HEIGHT, save_vid, show_vid, hide_labels, hide_conf, hide_class, windows, seen, pre_velocities_cal, DELTA_T):
+# def process_tracking(p, dt, masks, proto, im0s, paths, curr_frames, prev_frames, tracker_list, outputs, faces_data, depth_frame, display_center, f_pixel, known_id, collection_name, samples, client, save_crop, line_thickness, names, im, DEPTH_WIDTH, DEPTH_HEIGHT, save_vid, show_vid, hide_labels, hide_conf, hide_class, windows, seen, pre_velocities_cal, DELTA_T):
+def process_tracking(p, dt, masks, proto, im0s, paths, curr_frames, prev_frames, tracker_list, outputs, faces_data, depth_frame, display_center, f_pixel, known_id, save_crop, line_thickness, names, im, DEPTH_WIDTH, DEPTH_HEIGHT, save_vid, show_vid, hide_labels, hide_conf, hide_class, windows, seen, pre_velocities_cal, DELTA_T):
     rs_dicts = []
     curr_velocities = []
     # Process detections
@@ -292,17 +295,17 @@ def process_tracking(p, dt, masks, proto, im0s, paths, curr_frames, prev_frames,
                 tracker_list[i].tracker.camera_update(prev_frames[i], curr_frames[i])
                 
         if det is not None and len(det):
+
             print("\n\n#################################################\n\n")
             print("detection is not None")
             print("\n\n#################################################\n\n")
+
             mask = process_mask(proto[i], det[:, 6:], det[:, :4], im.shape[2:], upsample=True)  # HWC
             x_extremes = find_x_extremes(mask, det[:, :4], im.shape[2:], im0.shape)
             det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()  # rescale boxes to im0 size
-            # det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()  # rescale boxes to im0 size
             # Print results
             for c in det[:, 5].unique():
                 n = (det[:, 5] == c).sum()  # detections per class
-                # s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
             # pass detections to strongsort
             with dt[3]:
@@ -337,22 +340,15 @@ def process_tracking(p, dt, masks, proto, im0s, paths, curr_frames, prev_frames,
                     for l, idx in enumerate(closest_B_indices):
                         human_data.at[idx, 'embedding'] = faces_data.at[l, 'embedding']
 
-                for j, (output) in human_data.iterrows():#enumerate(outputs[i]):
-                    
-                #     # ID = None
-                    # print(output)
+                for j, (output) in human_data.iterrows():
                     bbox = output[['x1', 'y1', 'x2', 'y2']].tolist()#[0:4]
-                #     #####################################
-
-
-                    # print(bbox)
-                    id = output['ID']#[4]#find_id_matched(output[4],id_dic)  
-                    # print(id)
+                    id = output['ID']#[4] # find_id_matched(output[4],id_dic)  
                     cls = output['cls']#[5]
                     conf = output['conf']#[6]
-                    if output['embedding'] is not None :
+
+                    # Uncomment this to enable face recognition and milvus search
+                    """ if output['embedding'] is not None :
                         query_vectors = np.array([output['embedding']])  
-                        import math
 
                         top_k = 1
                         hyper_p = math.floor(top_k/2)
@@ -365,16 +361,12 @@ def process_tracking(p, dt, masks, proto, im0s, paths, curr_frames, prev_frames,
                         }
 
                         status, results = client.search(**param)
-                        # print(results, '\n',len(results))
-                        #%%
 
                         th = 0.6
                         pred_name, score, ref = top_k_pred(0,top_k,samples,results) 
                         if score >= th:
-                    #         known_id[str(human_id)] = pred_name
-                    # id = known_id[str(human_id)] if str(human_id) in known_id else str(human_id)
-                            pass
-                    # center = find_Center(bbox)
+                            pass """
+
                     if output['center_point'] is not None:
                         center = output['center_point']
                         center[0] = max(0, min(center[0], DEPTH_WIDTH-1))
@@ -555,7 +547,7 @@ def run(camera_type = 'real',
         pipeline.start(config)
 
     elif camera_type == 'simulated':
-        rclpy.init()
+        # rclpy.init()
         print("\nGetting data from the simulated camera.\n")
 
         # ROS2 node and subscriptions for simulated camera
@@ -625,7 +617,9 @@ def run(camera_type = 'real',
                                 Profile(device=device), 
                                 Profile())
     curr_frames, prev_frames = [None] * bs, [None] * bs
-    client, collection_name, samples = init_Milvus()
+
+    # Uncomment this to enable face detection
+    # client, collection_name, samples = init_Milvus()
 
     known_id = {}
     pre_velocity_cal = pd.DataFrame(columns=['ID', 'Real_x_position', 'Depth'])
@@ -671,26 +665,35 @@ def run(camera_type = 'real',
                                                     max_det, augment, visualize, classes, agnostic_nms)
 
             # Tracking
-            rs_dicts, pre_velocity_cal = process_tracking(p, dt, masks, proto, im0s, paths, curr_frames, 
+            """ rs_dicts, pre_velocity_cal = process_tracking(p, dt, masks, proto, im0s, paths, curr_frames, 
                                                         prev_frames, tracker_list, outputs, faces_data, 
                                                         depth_frame, display_center, f_pixel, known_id, 
                                                         collection_name, samples, client, save_crop, 
                                                         line_thickness, names, im, DEPTH_WIDTH, 
                                                         DEPTH_HEIGHT, save_vid, show_vid, hide_labels, 
                                                         hide_conf, hide_class, windows, seen, 
-                                                        pre_velocity_cal, DELTA_T)
+                                                        pre_velocity_cal, DELTA_T) """
             
-            return rs_dicts, pre_velocity_cal
-
+            rs_dicts, pre_velocity_cal = process_tracking(p, dt, masks, proto, im0s, paths, curr_frames, 
+                                                        prev_frames, tracker_list, outputs, faces_data, 
+                                                        depth_frame, display_center, f_pixel, known_id, 
+                                                        save_crop,line_thickness, names, im, DEPTH_WIDTH, 
+                                                        DEPTH_HEIGHT, save_vid, show_vid, hide_labels, 
+                                                        hide_conf, hide_class, windows, seen, 
+                                                        pre_velocity_cal, DELTA_T)
+                        
             # Reset the images after processing
             depth_image = None
             color_image = None
+            
+            return rs_dicts, pre_velocity_cal
 
     finally:
         if camera_type == 'real':
             pipeline.stop()  # Stop the camera
         if camera_type == 'simulated':
-            rclpy.shutdown()
+            pass
+            #rclpy.shutdown()
         cv2.destroyAllWindows()  # Close all OpenCV windows
 
 def main():
